@@ -1,14 +1,9 @@
 # Circular Calendar
 
-See https://github.com/rustwasm/wasm-pack
-See also https://rustwasm.github.io/
-See also https://rustwasm.github.io/docs/wasm-bindgen/
+This will be a WASM webpage generator that dynamically constructs and SVG showing
+a Southern Hemisphere based circular seasonal calendar.
 
 ## Install Build Tools
-
-### wasm-bindgen
-
-You need to depend on this and use it in your code.
 
 ### wasm-pack
 
@@ -17,11 +12,6 @@ your workflow.  It used to be mostly about deploying to `npm` but it deploys
 everywhere now.
 
 1. Run `wasm-pack build --target web` to build
-
-## web-sys
-
-This package lets you interact with the DOM from rust.
-No install required.
 
 ### wasm-opt
 
@@ -45,3 +35,16 @@ Run `make` and then `make deploy`.
 
 Output will be in `deploy/` folder, ready to serve from a webserver or via
 a `file:///` URL.
+
+## Technology and Notes
+
+WASM related libraries used:
+
+* wasm-bindgen
+* web-sys
+
+See also:
+
+* https://github.com/rustwasm/wasm-pack
+* https://rustwasm.github.io/
+* https://rustwasm.github.io/docs/wasm-bindgen/
