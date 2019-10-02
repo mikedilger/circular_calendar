@@ -7,7 +7,8 @@ all:
 
 deploy:
 	mkdir -p deploy
-	wasm-opt -Os -o deploy/$(PKG)_bg.wasm pkg/$(PKG)_bg.wasm
+#	wasm-opt -Os -o deploy/$(PKG)_bg.wasm pkg/$(PKG)_bg.wasm
+	cp pkg/$(PKG)_bg.wasm deploy/$(PKG)_bg.wasm
 	minify websrc/index.html > deploy/index.html
 	minify websrc/simple.css > deploy/a.css
 	terser pkg/$(PKG).js -c -m > deploy/$(PKG).js
