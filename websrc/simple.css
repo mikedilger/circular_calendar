@@ -1,0 +1,35 @@
+body {
+    margin:0;
+    color:#383038;
+    background-color:#FCFDFA;
+    font-family: Noto Serif,serif;
+    line-height:1.6;
+    font-size:18px;
+}
+
+h1,h2,h3 {
+    line-height:1.2;
+}
+pre,code,kbd,samp {
+    font-family: Noto Sans Mono,monospace;
+    padding: 0 4px;
+    color: #202020;
+    background-color:#F0F5E6;
+}
+
+a {
+    color: #123488;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+}
+a:hover, a:active {
+    color: #0000DD;
+}
+
+.small {
+    font-size:0.8rem;
+    font-family: Noto Sans,sans;
+}
+.large {
+    font-size:1.4rem;
+}
