@@ -33,3 +33,9 @@ a:hover, a:active {
 .large {
     font-size:1.4rem;
 }
+
+#calendar {
+    display: block;
+    width: 1000px;
+    height: 1000px;
+}
