@@ -2,11 +2,16 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, Element};
 use chrono::prelude::*;
+use std::panic;
 
 const XMLNS: &'static str = "http://www.w3.org/2000/svg";
 
 #[wasm_bindgen(start)]
 pub fn go() -> Result<(), JsValue> {
+
+    // Panic to the console
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     let window = web_sys::window().expect("no global window");
     let document = window.document().expect("window has no document");
     let body = document.body().expect("document has no body");
