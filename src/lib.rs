@@ -4,6 +4,7 @@ use web_sys::{Document, Element};
 use chrono::prelude::*;
 use std::panic;
 
+const SIZE: &'static str = "700";
 const XMLNS: &'static str = "http://www.w3.org/2000/svg";
 
 #[wasm_bindgen(start)]
@@ -18,8 +19,8 @@ pub fn go() -> Result<(), JsValue> {
 
     let container = {
         let container = document.create_element("div")?;
-        container.set_attribute("width", "1000")?;
-        container.set_attribute("height", "1000")?;
+        container.set_attribute("width", SIZE)?;
+        container.set_attribute("height", SIZE)?;
 
         let svg = svg(&document)?;
         container.append_child(&svg)?;
@@ -35,8 +36,8 @@ fn svg(document: &Document) -> Result<Element, JsValue>
 {
     let svg = document.create_element_ns(Some(XMLNS), "svg")?;
     svg.set_attribute_ns(None, "viewBox", "0 0 1000 1000")?;
-    svg.set_attribute_ns(None, "width", "1000")?;
-    svg.set_attribute_ns(None, "height", "1000")?;
+    svg.set_attribute_ns(None, "width", SIZE)?;
+    svg.set_attribute_ns(None, "height", SIZE)?;
     //svg.style.display = "block";
     svg.set_attribute_ns(None, "id", "calendar")?;
     svg.set_attribute_ns(None, "version", "1.1")?;
@@ -105,16 +106,30 @@ fn svg(document: &Document) -> Result<Element, JsValue>
     spring.set_attribute_ns(None, "fill", "green")?;
     svg.append_child(&spring)?;
 
-    let fall = svg_text(document, 720.0, 515.0, "Fall")?;
-    fall.set_attribute_ns(None, "font-size", "48")?;
-    fall.set_attribute_ns(None, "stroke", "black")?;
-    fall.set_attribute_ns(None, "fill", "brown")?;
-    svg.append_child(&fall)?;
+    let autumn = svg_text(document, 645.0, 515.0, "Autumn")?;
+    autumn.set_attribute_ns(None, "font-size", "48")?;
+    autumn.set_attribute_ns(None, "stroke", "black")?;
+    autumn.set_attribute_ns(None, "fill", "brown")?;
+    svg.append_child(&autumn)?;
 
     let (nowx, nowy) = calpoint(now);
     let nowline = svg_line(document, nowx, nowy, 500.0, 500.0,
-                           "red", "3")?;
+                           "blue", "3")?;
     svg.append_child(&nowline)?;
+
+    let (sx, sy) = calpoint(summer_solstice(now.year()));
+    let ssline = svg_line(document, sx, sy, 500.0, 500.0, "brown", "1")?;
+    svg.append_child(&ssline)?;
+    let (wx, wy) = calpoint(winter_solstice(now.year()));
+    let wsline = svg_line(document, wx, wy, 500.0, 500.0, "brown", "1")?;
+    svg.append_child(&wsline)?;
+    let (sx, sy) = calpoint(spring_equinox(now.year()));
+    let seline = svg_line(document, sx, sy, 500.0, 500.0, "brown", "1")?;
+    svg.append_child(&seline)?;
+    let (fx, fy) = calpoint(autumn_equinox(now.year()));
+    let feline = svg_line(document, fx, fy, 500.0, 500.0, "brown", "1")?;
+    svg.append_child(&feline)?;
+
 
     Ok(svg)
 }
@@ -156,4 +171,52 @@ fn calpoint(now: DateTime<Local>) -> (f32, f32) {
     let ratio = (seconds_so_far as f32) / (total_seconds as f32);
     let angle = (ratio - (1.0/24.0)) * 2.0 * std::f32::consts::PI;
     (500.0 + angle.sin()*500.0, 500.0 - angle.cos()*500.0)
+}
+
+fn spring_equinox(year: i32) -> DateTime<Local> {
+    match year {
+        2019 => Local.ymd(year,9,23).and_hms(7,50,0),
+        2020 => Local.ymd(year,9,22).and_hms(13,31,0),
+        2021 => Local.ymd(year,9,22).and_hms(19,21,0),
+        2022 => Local.ymd(year,9,23).and_hms(1,4,0),
+        2023 => Local.ymd(year,9,23).and_hms(6,50,0),
+        2024 => Local.ymd(year,9,22).and_hms(12,44,0),
+        _ => Local.ymd(year,9,23).and_hms(0,0,0), // approximation
+    }
+}
+
+fn autumn_equinox(year: i32) -> DateTime<Local> {
+    match year {
+        2019 => Local.ymd(year,3,20).and_hms(21,58,0),
+        2020 => Local.ymd(year,3,20).and_hms(3,50,0),
+        2021 => Local.ymd(year,3,20).and_hms(9,37,0),
+        2022 => Local.ymd(year,3,20).and_hms(15,33,0),
+        2023 => Local.ymd(year,3,20).and_hms(21,24,0),
+        2024 => Local.ymd(year,3,20).and_hms(3,7,0),
+        _ => Local.ymd(year,3,21).and_hms(0,0,0), // approximation
+    }
+}
+
+fn summer_solstice(year: i32) -> DateTime<Local> {
+    match year {
+        2019 => Local.ymd(year,12,22).and_hms(4,19,0),
+        2020 => Local.ymd(year,12,21).and_hms(10,02,0),
+        2021 => Local.ymd(year,12,21).and_hms(15,59,0),
+        2022 => Local.ymd(year,12,21).and_hms(21,48,0),
+        2023 => Local.ymd(year,12,22).and_hms(3,27,0),
+        2024 => Local.ymd(year,12,21).and_hms(9,20,0),
+        _ => Local.ymd(year,12,21).and_hms(0,0,0),
+    }
+}
+
+fn winter_solstice(year: i32) -> DateTime<Local> {
+    match year {
+        2019 => Local.ymd(year,6,21).and_hms(15,54,0),
+        2020 => Local.ymd(year,6,20).and_hms(21,44,0),
+        2021 => Local.ymd(year,6,21).and_hms(3,32,0),
+        2022 => Local.ymd(year,6,21).and_hms(9,14,0),
+        2023 => Local.ymd(year,6,21).and_hms(14,58,0),
+        2024 => Local.ymd(year,6,20).and_hms(20,51,0),
+        _ => Local.ymd(year,6,21).and_hms(0,0,0),
+    }
 }
