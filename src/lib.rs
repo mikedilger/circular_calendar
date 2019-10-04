@@ -4,12 +4,20 @@ use web_sys::{Document, Element};
 use chrono::prelude::*;
 use std::panic;
 
-const SIZE: &'static str = "1000";
+const SIZE: &'static str = "800";
 
+/* Summer Solstice
 const TOP_MONTH: u32 = 12;
 const TOP_DAY: u32 = 22;
 const TOP_HOUR: u32 = 4;
 const TOP_MINUTE: u32 = 19;
+const TOP_SECOND: u32 = 0;
+*/
+
+const TOP_MONTH: u32 = 1;
+const TOP_DAY: u32 = 1;
+const TOP_HOUR: u32 = 0;
+const TOP_MINUTE: u32 = 0;
 const TOP_SECOND: u32 = 0;
 
 const XMLNS: &'static str = "http://www.w3.org/2000/svg";
@@ -51,16 +59,18 @@ fn svg(document: &Document) -> Result<Element, JsValue>
     svg.set_attribute_ns(None, "id", "calendar")?;
     svg.set_attribute_ns(None, "version", "1.1")?;
 
+    // Main circle
     let circle = document.create_element_ns(Some(XMLNS), "circle")?;
     circle.set_attribute_ns(None, "cx", "500")?;
     circle.set_attribute_ns(None, "cy", "500")?;
     circle.set_attribute_ns(None, "r", "499")?;
     circle.set_attribute_ns(None, "stroke", "black")?;
-    circle.set_attribute_ns(None, "stroke-width", "1")?;
+    circle.set_attribute_ns(None, "stroke-width", "3")?;
     circle.set_attribute_ns(None, "fill", "lightyellow")?;
     circle.set_attribute_ns(None, "id", "maincircle")?;
     svg.append_child(&circle)?;
 
+    // Month separator lines
     let now = Local::now();
     for month in 1..12+1 {
         let (x,y) = calpoint(Local.ymd(now.year(), month, 1).and_hms(0,0,0));
@@ -68,10 +78,23 @@ fn svg(document: &Document) -> Result<Element, JsValue>
             3 | 6 | 9 | 12 => "3",
             _ => "1",
         };
-        let line = svg_line(document, x, y, 500.0, 500.0, "black", stroke_width)?;
+        let line = svg_line(document, x, y, 500.0, 500.0, "#808080", stroke_width)?;
+        line.set_attribute_ns(None, "stroke-dasharray", "12,6")?;
         svg.append_child(&line)?;
     }
 
+    // Mark Solstices and Equinoxes
+    for (x,y) in &[calpoint(summer_solstice(now.year())),
+                   calpoint(winter_solstice(now.year())),
+                   calpoint(spring_equinox(now.year())),
+                   calpoint(autumn_equinox(now.year()))]
+    {
+        let line = svg_line(document, *x, *y, 500.0, 500.0, "brown", "1")?;
+        //line.set_attribute_ns(None, "stroke-dasharray", "6,12")?;
+        svg.append_child(&line)?;
+    }
+
+    // Label months
     for (txt,mon,day,hour) in &[("Jan", 1, 16, 12),
                                 ("Feb", 2, 15, 12),
                                 ("Mar", 3, 16, 12),
@@ -91,6 +114,7 @@ fn svg(document: &Document) -> Result<Element, JsValue>
         svg.append_child(&m)?;
     }
 
+    // Label seasons
     for (txt,mon,day,hour,color) in &[("Summer", 1, 16, 12, "gold"),
                                       ("Autumn", 4, 16, 0, "brown"),
                                       ("Winter", 7, 16, 12, "white"),
@@ -101,29 +125,27 @@ fn svg(document: &Document) -> Result<Element, JsValue>
         if *mon==1 { x = x - 18.0; } // "Summer" m's are wide, special case adjustment.
         let m = svg_text(document, x, y, txt)?;
         m.set_attribute_ns(None, "font-size", "48")?;
-        m.set_attribute_ns(None, "stroke", "black")?;
+        m.set_attribute_ns(None, "stroke", "#404040")?;
         m.set_attribute_ns(None, "fill", color)?;
         svg.append_child(&m)?;
     }
 
+    // Dial pointing to now
     let (nowx, nowy) = calpoint(now);
     let nowline = svg_line(document, nowx, nowy, 500.0, 500.0,
                            "blue", "3")?;
     svg.append_child(&nowline)?;
 
-    let (sx, sy) = calpoint(summer_solstice(now.year()));
-    let ssline = svg_line(document, sx, sy, 500.0, 500.0, "brown", "1")?;
-    svg.append_child(&ssline)?;
-    let (wx, wy) = calpoint(winter_solstice(now.year()));
-    let wsline = svg_line(document, wx, wy, 500.0, 500.0, "brown", "1")?;
-    svg.append_child(&wsline)?;
-    let (sx, sy) = calpoint(spring_equinox(now.year()));
-    let seline = svg_line(document, sx, sy, 500.0, 500.0, "brown", "1")?;
-    svg.append_child(&seline)?;
-    let (fx, fy) = calpoint(autumn_equinox(now.year()));
-    let feline = svg_line(document, fx, fy, 500.0, 500.0, "brown", "1")?;
-    svg.append_child(&feline)?;
-
+    // Cover the center
+    let cover = document.create_element_ns(Some(XMLNS), "circle")?;
+    cover.set_attribute_ns(None, "cx", "500")?;
+    cover.set_attribute_ns(None, "cy", "500")?;
+    cover.set_attribute_ns(None, "r", "60")?;
+    cover.set_attribute_ns(None, "stroke", "black")?;
+    cover.set_attribute_ns(None, "stroke-width", "3")?;
+    cover.set_attribute_ns(None, "fill", "#505050")?;
+    cover.set_attribute_ns(None, "id", "covercircle")?;
+    svg.append_child(&cover)?;
 
     Ok(svg)
 }
