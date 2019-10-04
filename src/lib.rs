@@ -4,7 +4,14 @@ use web_sys::{Document, Element};
 use chrono::prelude::*;
 use std::panic;
 
-const SIZE: &'static str = "700";
+const SIZE: &'static str = "1000";
+
+const TOP_MONTH: u32 = 12;
+const TOP_DAY: u32 = 22;
+const TOP_HOUR: u32 = 4;
+const TOP_MINUTE: u32 = 19;
+const TOP_SECOND: u32 = 0;
+
 const XMLNS: &'static str = "http://www.w3.org/2000/svg";
 
 #[wasm_bindgen(start)]
@@ -12,6 +19,8 @@ pub fn go() -> Result<(), JsValue> {
 
     // Panic to the console
     panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+    // Set Top date
 
     let window = web_sys::window().expect("no global window");
     let document = window.document().expect("window has no document");
@@ -63,54 +72,39 @@ fn svg(document: &Document) -> Result<Element, JsValue>
         svg.append_child(&line)?;
     }
 
-    let jan = svg_text(document, 490.0, 20.0, "Jan")?;
-    svg.append_child(&jan)?;
-    let feb = svg_text(document, 729.0, 93.0, "Feb")?;
-    svg.append_child(&feb)?;
-    let mar = svg_text(document, 895.0, 270.0, "Mar")?;
-    svg.append_child(&mar)?;
-    let apr = svg_text(document, 960.0, 500.0, "Apr")?;
-    svg.append_child(&apr)?;
-    let may = svg_text(document, 895.0, 730.0, "May")?;
-    svg.append_child(&may)?;
-    let jun = svg_text(document, 729.0, 907.0, "Jun")?;
-    svg.append_child(&jun)?;
-    let jul = svg_text(document, 490.0, 980.0, "Jul")?;
-    svg.append_child(&jul)?;
-    let aug = svg_text(document, 241.0, 907.0, "Aug")?;
-    svg.append_child(&aug)?;
-    let sep = svg_text(document, 75.0, 730.0, "Sep")?;
-    svg.append_child(&sep)?;
-    let oct = svg_text(document, 10.0, 500.0, "Oct")?;
-    svg.append_child(&oct)?;
-    let nov = svg_text(document, 75.0, 270.0, "Nov")?;
-    svg.append_child(&nov)?;
-    let dec = svg_text(document, 241.0, 93.0, "Dec")?;
-    svg.append_child(&dec)?;
+    for (txt,mon,day,hour) in &[("Jan", 1, 16, 12),
+                                ("Feb", 2, 15, 12),
+                                ("Mar", 3, 16, 12),
+                                ("Apr", 4, 16, 0),
+                                ("May", 5, 16, 12),
+                                ("Jun", 6, 16, 0),
+                                ("Jul", 7, 16, 12),
+                                ("Aug", 8, 16, 12),
+                                ("Sep", 9, 16, 0),
+                                ("Oct", 10, 16, 12),
+                                ("Nov", 11, 16, 0),
+                                ("Dec", 12, 16, 12)]
+    {
+        let mpoint = calpoint(Local.ymd(now.year(), *mon, *day).and_hms(*hour,0,0));
+        let (x,y) = txtpoint(mpoint, 0.08, txt, 18.0);
+        let m = svg_text(document, x, y, txt)?;
+        svg.append_child(&m)?;
+    }
 
-    let summer = svg_text(document, 395.0, 270.0, "Summer")?;
-    summer.set_attribute_ns(None, "font-size", "48")?;
-    summer.set_attribute_ns(None, "stroke", "black")?;
-    summer.set_attribute_ns(None, "fill", "gold")?;
-    svg.append_child(&summer)?;
-
-    let winter = svg_text(document, 420.0, 760.0, "Winter")?;
-    winter.set_attribute_ns(None, "font-size", "48")?;
-    winter.set_attribute_ns(None, "stroke", "black")?;
-    winter.set_attribute_ns(None, "fill", "white")?;
-    svg.append_child(&winter)?;
-
-    let spring = svg_text(document, 180.0, 515.0, "Spring")?;
-    spring.set_attribute_ns(None, "font-size", "48")?;
-    spring.set_attribute_ns(None, "stroke", "black")?;
-    spring.set_attribute_ns(None, "fill", "green")?;
-    svg.append_child(&spring)?;
-
-    let autumn = svg_text(document, 645.0, 515.0, "Autumn")?;
-    autumn.set_attribute_ns(None, "font-size", "48")?;
-    autumn.set_attribute_ns(None, "stroke", "black")?;
-    autumn.set_attribute_ns(None, "fill", "brown")?;
-    svg.append_child(&autumn)?;
+    for (txt,mon,day,hour,color) in &[("Summer", 1, 16, 12, "gold"),
+                                      ("Autumn", 4, 16, 0, "brown"),
+                                      ("Winter", 7, 16, 12, "white"),
+                                      ("Spring", 10, 16, 12, "green")]
+    {
+        let mpoint = calpoint(Local.ymd(now.year(), *mon, *day).and_hms(*hour,0,0));
+        let (mut x,y) = txtpoint(mpoint, 0.5, txt, 48.0);
+        if *mon==1 { x = x - 18.0; } // "Summer" m's are wide, special case adjustment.
+        let m = svg_text(document, x, y, txt)?;
+        m.set_attribute_ns(None, "font-size", "48")?;
+        m.set_attribute_ns(None, "stroke", "black")?;
+        m.set_attribute_ns(None, "fill", color)?;
+        svg.append_child(&m)?;
+    }
 
     let (nowx, nowy) = calpoint(now);
     let nowline = svg_line(document, nowx, nowy, 500.0, 500.0,
@@ -158,19 +152,37 @@ fn svg_text(document: &Document, x: f32, y: f32, text: &str)
     Ok(elem)
 }
 
-fn calpoint(now: DateTime<Local>) -> (f32, f32) {
-    let year = now.year();
-    let start = Local.ymd(year,1,1).and_hms(0,0,0);
-    let seconds_so_far: i64 = now.signed_duration_since(start).num_seconds();
+fn get_ratio(from: DateTime<Local>, to: DateTime<Local>) -> f32 {
+    let year = to.year();
+    let seconds_so_far: i64 = to.signed_duration_since(from).num_seconds();
     let total_seconds = {
         let days_this_year: i64 = Local.ymd(year+1,1,1).and_hms(0,0,0)
             .signed_duration_since( Local.ymd(year,1,1).and_hms(0,0,0) )
             .num_days();
         60*60*24*days_this_year
     };
-    let ratio = (seconds_so_far as f32) / (total_seconds as f32);
-    let angle = (ratio - (1.0/24.0)) * 2.0 * std::f32::consts::PI;
+    (seconds_so_far as f32) / (total_seconds as f32)
+}
+
+fn calpoint(now: DateTime<Local>) -> (f32, f32) {
+    let start = Local.ymd(now.year(),1,1).and_hms(0,0,0);
+    let ratio = get_ratio(start, now);
+    let rotate_fraction = {
+        let top = Local.ymd(now.year(),TOP_MONTH,TOP_DAY).and_hms(TOP_HOUR,TOP_MINUTE,TOP_SECOND);
+        get_ratio(start, top)
+    };
+    let angle = (ratio - rotate_fraction) * 2.0 * std::f32::consts::PI;
     (500.0 + angle.sin()*500.0, 500.0 - angle.cos()*500.0)
+}
+
+fn txtpoint(calpoint: (f32, f32), percent_inward: f32, text: &str, fontsize: f32) -> (f32, f32) {
+    let ctrx = calpoint.0 - ((calpoint.0 - 500.0) * percent_inward);
+    let ctry = calpoint.1 - ((calpoint.1 - 500.0) * percent_inward);
+    let halfchars = text.len() as f32 / 2.0;
+    let fontpx = fontsize * 0.5; // guess
+    let x = ctrx - halfchars*fontpx;
+    let y = ctry + fontpx/2.0;
+    (x,y)
 }
 
 fn spring_equinox(year: i32) -> DateTime<Local> {
